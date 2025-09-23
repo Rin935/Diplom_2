@@ -39,11 +39,24 @@ class TestUserCreation:
         assert response.json() == expected_response, \
             f"Ожидался ответ {expected_response}, получен:{response.json()}"
 
-    @allure.title("Создание пользователя с незаполненным обязательным полем")
-    def test_create_user_missing_fields(self):
-        incomplete_user = USER_WITH_MISSING_FIELDS.copy()
-        incomplete_user["password"] = ""
-        response = register_user(incomplete_user)
+    REQUIRED_FIELDS = ["email", "password", "name"]
+    EMPTY_VARIANTS = ["missing", "empty_string"]
+
+    @pytest.mark.parametrize("field,variant", [
+        (field, variant)
+        for field in REQUIRED_FIELDS
+        for variant in EMPTY_VARIANTS
+    ])
+    @allure.title("Создание пользователя с незаполненным обязательным полем: {field} ({variant})")
+    def test_create_user_missing_fields(field, variant):
+        user = USER.copy()
+
+        if variant == "missing":
+            user.pop(field, None)
+        else:  # empty_string
+            user[field] = ""
+
+        response = register_user(user)
 
         assert response.status_code == 403, \
             f"Ожидался код 403, получен {response.status_code}. Ответ:{response.text}"
