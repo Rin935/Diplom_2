@@ -40,21 +40,12 @@ class TestUserCreation:
             f"Ожидался ответ {expected_response}, получен:{response.json()}"
 
     REQUIRED_FIELDS = ["email", "password", "name"]
-    EMPTY_VARIANTS = ["missing", "empty_string"]
 
-    @pytest.mark.parametrize("field,variant", [
-        (field, variant)
-        for field in REQUIRED_FIELDS
-        for variant in EMPTY_VARIANTS
-    ])
-    @allure.title("Создание пользователя с незаполненным обязательным полем: {field} ({variant})")
-    def test_create_user_missing_fields(field, variant):
+    @pytest.mark.parametrize("field", REQUIRED_FIELDS)
+    @allure.title("Создание пользователя с отсутствующим обязательным полем: {field} (missing)")
+    def test_create_user_missing_field(field):
         user = USER.copy()
-
-        if variant == "missing":
-            user.pop(field, None)
-        else:  # empty_string
-            user[field] = ""
+        user.pop(field, None)
 
         response = register_user(user)
 
@@ -65,4 +56,21 @@ class TestUserCreation:
             "message": "Email, password and name are required fields"
         }
         assert response.json() == expected_response, \
-        f"Ожидался ответ {expected_response}, получен:{response.json()}"
+            f"Ожидался ответ {expected_response}, получен:{response.json()}"
+
+    @pytest.mark.parametrize("field", REQUIRED_FIELDS)
+    @allure.title("Создание пользователя с пустым обязательным полем: {field} (empty_string)")
+    def test_create_user_empty_field(field):
+        user = USER.copy()
+        user[field] = ""
+
+        response = register_user(user)
+
+        assert response.status_code == 403, \
+            f"Ожидался код 403, получен {response.status_code}. Ответ:{response.text}"
+        expected_response = {
+            "success": False,
+            "message": "Email, password and name are required fields"
+        }
+        assert response.json() == expected_response, \
+            f"Ожидался ответ {expected_response}, получен:{response.json()}"
